@@ -4,16 +4,36 @@ venv/
 # Python Cache
 __pycache__/
 *.pyc
+*.pyo
 
-# Dataset Files
+# Dataset Files (large binary data)
 data/raw/
 data/processed/
 
-# Trained Models
+# Trained Models (binary files — JSON configs ARE committed)
 models/*.pkl
+models/*.joblib
+
+# Output Artifacts (large generated files)
+outputs/
 
 # Jupyter
 .ipynb_checkpoints/
 
 # VS Code
 .vscode/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+
+# Pytest cache
+.pytest_cache/
+
+# Distribution / Packaging
+dist/
+build/
+*.egg-info/

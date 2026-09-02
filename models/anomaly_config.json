@@ -1,0 +1,11 @@
+{
+  "model_type": "IsolationForest",
+  "calibrated_threshold": -0.006906591973109933,
+  "model_params": {
+    "contamination": 0.05,
+    "n_estimators": 300,
+    "max_samples": "auto",
+    "random_state": 42,
+    "calibrated_threshold": -0.006906591973109933
+  }
+}

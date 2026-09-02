@@ -1,56 +1,131 @@
 import pandas as pd
+import os
 
-# File paths
-benign_path = "data/raw/Benign-Monday-no-metadata.parquet"
-portscan_path = "data/raw/Portscan-Friday-no-metadata.parquet"
-webattack_path = "data/raw/WebAttacks-Thursday-no-metadata.parquet"
+# =============================
+# Canonical Label Taxonomy
+# =============================
 
-# Load datasets
-benign_df = pd.read_parquet(benign_path)
-portscan_df = pd.read_parquet(portscan_path)
-webattack_df = pd.read_parquet(webattack_path)
-
-# Display information
-print("Benign Dataset:", benign_df.shape)
-print("PortScan Dataset:", portscan_df.shape)
-print("WebAttack Dataset:", webattack_df.shape)
-
-print("\nBenign Columns:")
-print(benign_df.columns.tolist())
-
-datasets = {
-    "Benign": benign_df,
-    "PortScan": portscan_df,
-    "WebAttack": webattack_df
+LABEL_MAP = {
+    "Benign": "Benign",
+    "BENIGN": "Benign",
+    "PortScan": "PortScan",
+    "Web Attack \ufffd Brute Force": "Web Attack - Brute Force",
+    "Web Attack \u00ef\u00bf\u00bd Brute Force": "Web Attack - Brute Force",
+    "Web Attack \u2013 Brute Force": "Web Attack - Brute Force",
+    "Web Attack - Brute Force": "Web Attack - Brute Force",
+    "Web Attack \ufffd XSS": "Web Attack - XSS",
+    "Web Attack \u00ef\u00bf\u00bd XSS": "Web Attack - XSS",
+    "Web Attack \u2013 XSS": "Web Attack - XSS",
+    "Web Attack - XSS": "Web Attack - XSS",
+    "Web Attack \ufffd Sql Injection": "Web Attack - SQL Injection",
+    "Web Attack \u00ef\u00bf\u00bd Sql Injection": "Web Attack - SQL Injection",
+    "Web Attack \u2013 Sql Injection": "Web Attack - SQL Injection",
+    "Web Attack - Sql Injection": "Web Attack - SQL Injection",
+    "Web Attack - SQL Injection": "Web Attack - SQL Injection",
 }
 
-for name, df in datasets.items():
-    print(f"\n{'='*50}")
-    print(f"{name} Dataset")
-    print(f"{'='*50}")
+CANONICAL_LABELS = [
+    "Benign",
+    "PortScan",
+    "Web Attack - Brute Force",
+    "Web Attack - XSS",
+    "Web Attack - SQL Injection",
+]
 
-    print("Shape:", df.shape)
-    print("\nData Types:")
-    print(df.dtypes)
+RAW_FILES = {
+    "Benign": "data/raw/Benign-Monday-no-metadata.parquet",
+    "PortScan": "data/raw/Portscan-Friday-no-metadata.parquet",
+    "WebAttack": "data/raw/WebAttacks-Thursday-no-metadata.parquet",
+}
 
-    print("\nMissing Values:")
-    print(df.isnull().sum())
 
-    print("\nFirst 5 Rows:")
-    print(df.head())
+# =============================
+# 1. Load Individual Datasets
+# =============================
 
-    # Merge the datasets
-combined_df = pd.concat(
-    [benign_df, portscan_df, webattack_df],
-    ignore_index=True
-)
+def load_raw_datasets(base_dir="."):
+    """Load all raw parquet files and return as a dict of DataFrames."""
+    datasets = {}
+    for name, rel_path in RAW_FILES.items():
+        path = os.path.join(base_dir, rel_path)
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Raw data file not found: {path}")
+        df = pd.read_parquet(path)
+        datasets[name] = df
+        print(f"Loaded {name}: {df.shape}")
+    return datasets
 
-print("\nMerged Dataset Shape:", combined_df.shape)
-# Save merged dataset
-combined_df.to_parquet(
-    "data/processed/merged_dataset.parquet",
-    index=False
-)
 
-print("Merged dataset saved successfully!")
-print("\nMerged Dataset Shape:", combined_df.shape)
+# =============================
+# 2. Normalize Labels
+# =============================
+
+def normalize_labels(df, label_column="Label"):
+    """Map all label variants to canonical names.
+
+    Handles Unicode corruption artifacts from CICIDS2017
+    (replacement char U+FFFD, en-dash U+2013, etc.).
+    """
+    if label_column not in df.columns:
+        raise ValueError(f"Column '{label_column}' not found in DataFrame")
+
+    # Convert categorical to string for replacement
+    if hasattr(df[label_column], "cat"):
+        df[label_column] = df[label_column].astype(str)
+
+    df[label_column] = df[label_column].map(LABEL_MAP)
+
+    unmapped = df[label_column].isna()
+    if unmapped.any():
+        bad_labels = df.loc[unmapped, label_column].unique()
+        raise ValueError(f"Unmapped labels found: {bad_labels}")
+
+    return df
+
+
+# =============================
+# 3. Merge Datasets
+# =============================
+
+def merge_datasets(datasets):
+    """Concatenate all DataFrames into a single merged DataFrame."""
+    combined = pd.concat(datasets.values(), ignore_index=True)
+    print(f"Merged dataset: {combined.shape}")
+    return combined
+
+
+# =============================
+# 4. Full Load Pipeline
+# =============================
+
+def load_and_merge(base_dir=".", save_path=None):
+    """Load raw files, normalize labels, merge, and optionally save."""
+    datasets = load_raw_datasets(base_dir)
+
+    for name, df in datasets.items():
+        datasets[name] = normalize_labels(df)
+        print(f"  {name} labels: {datasets[name]['Label'].value_counts().to_dict()}")
+
+    merged = merge_datasets(datasets)
+
+    if save_path:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        merged.to_parquet(save_path, index=False)
+        print(f"Saved merged dataset to: {save_path}")
+
+    return merged
+
+
+# =============================
+# Main
+# =============================
+
+if __name__ == "__main__":
+    merged = load_and_merge(
+        base_dir=".",
+        save_path="data/processed/merged_dataset.parquet"
+    )
+
+    print(f"\nFinal shape: {merged.shape}")
+    print(f"\nLabel distribution:")
+    print(merged["Label"].value_counts())
