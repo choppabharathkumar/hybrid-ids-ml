@@ -1,6 +1,8 @@
 # 🛡️ Hybrid Network Intrusion Detection System (HIDS)
 
-A **Hybrid Intrusion Detection System** that combines **Rule-Based Signature Detection** with **Isolation Forest Anomaly Detection** to detect both known and unknown cyber threats. The project integrates **SHAP** for explainable AI, a **Risk Assessment Engine**, **Remediation Guidance**, and a **Streamlit Dashboard** for interactive visualization.
+[![Unit Tests](https://github.com/choppabharathkumar/hybrid-ids-ml/actions/workflows/tests.yml/badge.svg)](https://github.com/choppabharathkumar/hybrid-ids-ml/actions/workflows/tests.yml)
+
+A **Hybrid Intrusion Detection System** that combines **Rule-Based Signature Detection** with **Isolation Forest Anomaly Detection** to detect both known and unknown cyber threats. The project integrates **SHAP** for explainable AI, a **Risk Assessment Engine**, **Remediation Guidance**, and a **Streamlit Dashboard** for interactive visualization. All 37 unit tests run in **GitHub Actions CI** on every push/PR.
 
 ---
 
@@ -230,7 +232,7 @@ pytest tests/ -v
 - Comprehensive Evaluation module
 - Visualization suite (10 chart types)
 - Streamlit Dashboard (9 pages)
-- Unit test suite (30+ tests)
+- Unit test suite (37 tests, incl. evaluation regression tests)
 - Main pipeline orchestrator
 
 ---

@@ -37,10 +37,16 @@ def evaluate_hybrid_predictions(predictions_path="outputs/hybrid/hybrid_predicti
         # Build from Signature + Anomaly
         pred_col = "_eval_prediction"
         df[pred_col] = df["Signature_Prediction"].replace("Unmatched", "Benign")
-        if "Anomaly_Prediction" in df.columns:
+        if "Is_Anomaly" in df.columns:
             anomaly_mask = (
                 (df["Signature_Prediction"] == "Unmatched")
-                & (df["Anomaly_Prediction"] == "Anomaly")
+                & (df["Is_Anomaly"] == True)
+            )
+            df.loc[anomaly_mask, pred_col] = "Potential Unknown Attack"
+        elif "Anomaly_Prediction" in df.columns:
+            anomaly_mask = (
+                (df["Signature_Prediction"] == "Unmatched")
+                & (df["Anomaly_Prediction"] == -1)
             )
             df.loc[anomaly_mask, pred_col] = "Potential Unknown Attack"
 
@@ -82,8 +88,11 @@ def evaluate_hybrid_predictions(predictions_path="outputs/hybrid/hybrid_predicti
 
     sig_detected = df["Signature_Matched"].sum() if "Signature_Matched" in df.columns else 0
     anom_detected = 0
-    if "Anomaly_Prediction" in df.columns:
-        anom_mask = (df["Signature_Prediction"] == "Unmatched") & (df["Anomaly_Prediction"] == "Anomaly")
+    if "Is_Anomaly" in df.columns:
+        anom_mask = (~df["Signature_Matched"]) & (df["Is_Anomaly"] == True)
+        anom_detected = anom_mask.sum()
+    elif "Anomaly_Prediction" in df.columns:
+        anom_mask = (~df["Signature_Matched"]) & (df["Anomaly_Prediction"] == -1)
         anom_detected = anom_mask.sum()
     normal = len(df) - sig_detected - anom_detected
 

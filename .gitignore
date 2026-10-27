@@ -1,10 +1,15 @@
 # Virtual Environment
 venv/
+test_venv/
 
 # Python Cache
 __pycache__/
 *.pyc
 *.pyo
+
+# Environment / Secrets
+.env
+.env.*
 
 # Dataset Files (large binary data)
 data/raw/
@@ -16,6 +21,8 @@ models/*.joblib
 
 # Output Artifacts (large generated files)
 outputs/
+
+# NOTE: results/ is intentionally tracked (small JSON/CSV metrics for reviewers)
 
 # Jupyter
 .ipynb_checkpoints/
@@ -37,3 +44,6 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# Resume files (not part of the HIDS project)
+Bharath_Kumar_AI_ML_Data_Resume_Final.*

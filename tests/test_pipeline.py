@@ -322,5 +322,106 @@ class TestEdgeCases:
         assert 0 <= score <= 100
 
 
+# =============================
+# Test: Evaluation Artifact Regression
+# =============================
+
+class TestEvaluationArtifacts:
+    """Regression tests — verify that saved evaluation artifacts
+    contain expected structure and metrics remain consistent."""
+
+    def test_hybrid_evaluation_file_exists(self):
+        path = os.path.join("outputs", "evaluation", "hybrid_evaluation.json")
+        assert os.path.exists(path), f"Missing {path}"
+
+    def test_hybrid_evaluation_structure(self):
+        import json
+        path = os.path.join("outputs", "evaluation", "hybrid_evaluation.json")
+        if not os.path.exists(path):
+            pytest.skip("Evaluation file not yet generated")
+        with open(path) as f:
+            data = json.load(f)
+        assert "binary_metrics" in data
+        assert "per_attack_recall" in data
+        assert "total_flows" in data
+        bm = data["binary_metrics"]
+        for key in ("tp", "tn", "fp", "fn", "precision", "recall", "f1_score", "fpr"):
+            assert key in bm, f"Missing binary_metrics.{key}"
+
+    def test_total_flows_matches_test_split(self):
+        import json
+        eval_path = os.path.join("outputs", "evaluation", "hybrid_evaluation.json")
+        config_path = os.path.join("models", "preprocessing_config.json")
+        if not os.path.exists(eval_path) or not os.path.exists(config_path):
+            pytest.skip("Artifacts not yet generated")
+        with open(eval_path) as f:
+            eval_data = json.load(f)
+        with open(config_path) as f:
+            config = json.load(f)
+        assert eval_data["total_flows"] == config["split_info"]["test_size"]
+
+    def test_recall_above_minimum(self):
+        """Regression: overall attack recall should stay above 85%."""
+        import json
+        path = os.path.join("outputs", "evaluation", "hybrid_evaluation.json")
+        if not os.path.exists(path):
+            pytest.skip("Evaluation file not yet generated")
+        with open(path) as f:
+            data = json.load(f)
+        assert data["binary_metrics"]["recall"] >= 0.85
+
+    def test_fpr_below_maximum(self):
+        """Regression: FPR should stay below 10%."""
+        import json
+        path = os.path.join("outputs", "evaluation", "hybrid_evaluation.json")
+        if not os.path.exists(path):
+            pytest.skip("Evaluation file not yet generated")
+        with open(path) as f:
+            data = json.load(f)
+        assert data["binary_metrics"]["fpr"] <= 0.10
+
+    def test_all_attack_classes_present(self):
+        import json
+        path = os.path.join("outputs", "evaluation", "hybrid_evaluation.json")
+        if not os.path.exists(path):
+            pytest.skip("Evaluation file not yet generated")
+        with open(path) as f:
+            data = json.load(f)
+        expected = {"PortScan", "Web Attack - Brute Force",
+                    "Web Attack - SQL Injection", "Web Attack - XSS"}
+        actual = set(data["per_attack_recall"].keys())
+        assert expected == actual
+
+
+# =============================
+# Test: SQL Injection Rule
+# =============================
+
+class TestSQLInjectionRule:
+    """Regression: SQLI_001 rule correctness."""
+
+    def test_sqli_positive(self):
+        from src.rule_based_detection import classify_sql_injection
+        row = {
+            "Init Fwd Win Bytes": 29200,
+            "Init Bwd Win Bytes": 235,
+            "Fwd Act Data Packets": 2,
+            "Packet Length Mean": 117,
+            "Flow Duration": 5500000,
+        }
+        assert classify_sql_injection(row) is True
+
+    def test_sqli_negative_wrong_window(self):
+        from src.rule_based_detection import classify_sql_injection
+        row = {
+            "Init Fwd Win Bytes": 29200,
+            "Init Bwd Win Bytes": 28960,
+            "Fwd Act Data Packets": 2,
+            "Packet Length Mean": 117,
+            "Flow Duration": 5500000,
+        }
+        assert classify_sql_injection(row) is False
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
