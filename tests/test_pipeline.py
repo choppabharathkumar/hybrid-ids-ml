@@ -331,7 +331,7 @@ class TestEvaluationArtifacts:
     contain expected structure and metrics remain consistent."""
 
     def test_hybrid_evaluation_file_exists(self):
-        path = os.path.join("outputs", "evaluation", "hybrid_evaluation.json")
+        path = os.path.join("results", "hybrid_evaluation.json")
         if not os.path.isfile(path):
             pytest.skip(
             "Generated evaluation artifact is unavailable in a clean "
@@ -341,7 +341,7 @@ class TestEvaluationArtifacts:
 
     def test_hybrid_evaluation_structure(self):
         import json
-        path = os.path.join("outputs", "evaluation", "hybrid_evaluation.json")
+        path = os.path.join("results", "hybrid_evaluation.json")
         if not os.path.exists(path):
             pytest.skip("Evaluation file not yet generated")
         with open(path) as f:
@@ -355,7 +355,7 @@ class TestEvaluationArtifacts:
 
     def test_total_flows_matches_test_split(self):
         import json
-        eval_path = os.path.join("outputs", "evaluation", "hybrid_evaluation.json")
+        eval_path = os.path.join("results", "hybrid_evaluation.json")
         config_path = os.path.join("models", "preprocessing_config.json")
         if not os.path.exists(eval_path) or not os.path.exists(config_path):
             pytest.skip("Artifacts not yet generated")
@@ -368,7 +368,7 @@ class TestEvaluationArtifacts:
     def test_recall_above_minimum(self):
         """Regression: overall attack recall should stay above 85%."""
         import json
-        path = os.path.join("outputs", "evaluation", "hybrid_evaluation.json")
+        path = os.path.join("results", "hybrid_evaluation.json")
         if not os.path.exists(path):
             pytest.skip("Evaluation file not yet generated")
         with open(path) as f:
@@ -378,7 +378,7 @@ class TestEvaluationArtifacts:
     def test_fpr_below_maximum(self):
         """Regression: FPR should stay below 10%."""
         import json
-        path = os.path.join("outputs", "evaluation", "hybrid_evaluation.json")
+        path = os.path.join("results", "hybrid_evaluation.json")
         if not os.path.exists(path):
             pytest.skip("Evaluation file not yet generated")
         with open(path) as f:
@@ -387,7 +387,7 @@ class TestEvaluationArtifacts:
 
     def test_all_attack_classes_present(self):
         import json
-        path = os.path.join("outputs", "evaluation", "hybrid_evaluation.json")
+        path = os.path.join("results", "hybrid_evaluation.json")
         if not os.path.exists(path):
             pytest.skip("Evaluation file not yet generated")
         with open(path) as f:
